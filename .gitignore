@@ -1,0 +1,20 @@
+# OS & Editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Dependencies & Environment
+node_modules/
+.env
+.env.*
+
+# Logs, Backups & Temporary QA Artifacts
+*.log
+*.bak
+*.backup
+.playwright-mcp/
+tmp/
