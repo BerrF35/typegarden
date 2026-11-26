@@ -39,6 +39,7 @@ Every non-Flora theme ships with **10 mathematically WCAG-audited palettes** (en
 - **Backspace** smoothly withers/fades/ebbs the last letter.
 - **Enter** clears the canvas.
 - **Click** anywhere to summon the theme's live animated visitor (perches dynamically on hero crowns, peaks, waves, gears, lanterns, or roses).
+- **Hide flyers (`Alt+B`)** removes all active birds, butterflies, and flying visitors immediately and disables new spawning across Type, Poster, and Lyrics modes (persisted in `localStorage`, keyboard-accessible with `aria-pressed` & live-region status announcements).
 - **Double-click** anywhere to plant a themed canvas gift.
 - **Export** directly to high-DPI **PNG**, clean vector **SVG** (matching both smooth quadratic and sharp polygonal geometry), or live canvas **REC** video.
 

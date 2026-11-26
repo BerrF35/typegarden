@@ -485,7 +485,8 @@
     transition: opacity 180ms ease;
     pointer-events: none;
   }
-  [data-tg="bar"]:hover { opacity: 0.96; }
+  [data-tg="bar"]:hover,
+  [data-tg="bar"]:focus-within { opacity: 1; }
   [data-tg="hints"] {
     display: flex;
     gap: 20px;
@@ -561,11 +562,57 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    min-block-size: 34px;
+    white-space: nowrap;
     transition: border-color 140ms ease, color 140ms ease, background-color 140ms ease;
   }
   [data-tg="btn"]:hover {
     border-color: var(--tg-hint, #FFFFFF);
     color: var(--tg-hint, #FFFFFF);
+  }
+  [data-tg="btn"]:focus-visible,
+  [data-tg="sw"]:focus-visible,
+  .chip-btn:focus-visible,
+  .mode-btn:focus-visible,
+  .theme-trigger:focus-visible {
+    outline: 2px solid var(--tg-hint, #FFFFFF);
+    outline-offset: 2px;
+  }
+  [data-tg="btn"].flyers-off {
+    border-color: var(--tg-primary, #FF3B30);
+    background: var(--tg-hint, #FFFFFF);
+    color: var(--tg-bg, #000000);
+    font-weight: 500;
+  }
+  [data-tg="btn"].flyers-off:hover {
+    border-color: var(--tg-hint, #FFFFFF);
+    color: var(--tg-bg, #000000);
+  }
+  .flyer-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    display: block;
+  }
+  .flyer-slash {
+    opacity: 0.45;
+    transition: opacity 140ms ease;
+  }
+  [data-tg="btn"].flyers-off .flyer-slash,
+  .chip-btn.flyers-off .flyer-slash {
+    opacity: 1;
+    stroke-width: 1.8;
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
   [data-tg="btn"].recording {
     border-color: #FF3B30;
@@ -1400,7 +1447,8 @@
       width: calc(var(--sw) * 0.46);
       height: calc(var(--sw) * 0.46);
     }
-    [data-tg="btn"] { padding: 7px 10px; font-size: 11px; }
+    [data-tg="btn"] { padding: 7px 9px; font-size: 11px; gap: 4px; min-block-size: 32px; }
+    .type-actions { flex-wrap: wrap; }
     .tg-peer { font-size: 10px; }
     .tg-peer svg { width: 15px; height: 17px; }
     .tg-peer span { left: 12px; top: 15px; padding: 3px 7px; }
@@ -1460,6 +1508,10 @@
     <div data-tg="ctrls">
       <div id="type-palettes" data-tg="pal" role="group" aria-label="Color palettes"></div>
       <div class="type-actions">
+        <button type="button" id="btn-no-flyers" data-tg="btn" aria-pressed="false" aria-label="Remove all birds, butterflies, and flying creatures" title="Remove & disable all birds, butterflies & flying visitors (Alt+B)">
+          <svg class="flyer-icon" aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M8 8.2C6.4 4.2 2.2 3.8 2.2 6.8c0 1.8 1.9 2.6 3.5 2.1C4.3 9.7 3.8 11.8 5.2 12.6c1.2.7 2.5-.6 2.8-2.4.3 1.8 1.6 3.1 2.8 2.4 1.4-.8.9-2.9-.5-3.7 1.6.5 3.5-.3 3.5-2.1 0-3-4.2-2.6-5.8 1.4Z"/><path class="flyer-slash" d="M2.2 13.8L13.8 2.2"/></svg>
+          <span id="no-flyers-label">Hide flyers</span>
+        </button>
         <button type="button" id="btn-live-rec" data-tg="btn" title="Record live typing as video">
           <span class="rec-dot" aria-hidden="true"></span><span id="live-rec-label">REC</span>
         </button>
@@ -1468,6 +1520,7 @@
       </div>
     </div>
   </div>
+  <div id="tg-live-status" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
 
   <!-- POSTER MODE -->
   <section id="poster-view" class="studio-view" data-tg="poster" hidden aria-label="Poster studio">
@@ -1484,7 +1537,12 @@
       </div>
 
       <div class="panel-section">
-        <div class="section-label">Motion</div>
+        <div class="section-head">
+          <div class="section-label">Motion</div>
+          <button type="button" id="btn-poster-no-flyers" class="chip-btn" aria-pressed="false" aria-label="Remove all birds, butterflies, and flying creatures in Poster mode" title="Remove & disable all flying visitors">
+            <span class="chip-dot" aria-hidden="true"></span><span id="poster-no-flyers-label">Hide flyers</span>
+          </button>
+        </div>
         <div id="poster-presets" class="preset-grid"></div>
       </div>
 
@@ -2695,6 +2753,8 @@
         }
       } catch (_) {}
       this.paletteIdx = this.themePalettes[this.theme] || 0;
+      this.noFlyers = false;
+      try { this.noFlyers = localStorage.getItem('tg-no-flyers') === '1'; } catch (_) {}
       this.props = { boil: true, recoil: 20, density: 1, showHint: true };
 
       // Measurement & drawing context
@@ -10500,6 +10560,9 @@
         if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
           e.preventDefault();
           e.shiftKey ? this.saveSVG() : this.savePNG();
+        } else if (e.altKey && !e.ctrlKey && !e.metaKey && e.key.toLowerCase() === 'b') {
+          e.preventDefault();
+          this.toggleNoFlyers();
         }
         return;
       }
@@ -10552,6 +10615,7 @@
     }
 
     spawnFly(cx, cy) {
+      if (this.noFlyers) return;
       if (this.flies.length >= 6) {
         const o = this.flies.find(f => f.st !== 'leave');
         if (o) this.flyOff(o);
@@ -10584,7 +10648,72 @@
       f.ey = f.y - this.H * 0.3;
     }
 
+    clearAllFlyers() {
+      this.flies = [];
+      this.perch = [];
+    }
+
+    announceStatus(msg) {
+      const live = document.getElementById('tg-live-status');
+      if (!live) return;
+      live.textContent = '';
+      setTimeout(() => { live.textContent = msg; }, 20);
+    }
+
+    syncNoFlyersUI() {
+      const off = !!this.noFlyers;
+      const btn = document.getElementById('btn-no-flyers');
+      const lbl = document.getElementById('no-flyers-label');
+      if (btn) {
+        btn.classList.toggle('flyers-off', off);
+        btn.setAttribute('aria-pressed', String(off));
+        btn.setAttribute('aria-label', off
+          ? 'Flying creatures are removed and disabled. Activate to allow birds, butterflies, and visitors again'
+          : 'Remove all birds, butterflies, and flying creatures');
+        btn.title = off
+          ? 'Flying visitors disabled — click to re-enable (Alt+B)'
+          : 'Remove & disable all birds, butterflies & flying visitors (Alt+B)';
+      }
+      if (lbl) lbl.textContent = off ? 'Flyers off' : 'Hide flyers';
+
+      const pBtn = document.getElementById('btn-poster-no-flyers');
+      const pLbl = document.getElementById('poster-no-flyers-label');
+      if (pBtn) {
+        pBtn.classList.toggle('active', off);
+        pBtn.setAttribute('aria-pressed', String(off));
+      }
+      if (pLbl) pLbl.textContent = off ? 'Flyers off' : 'Hide flyers';
+    }
+
+    setNoFlyers(off, announce = true) {
+      this.noFlyers = !!off;
+      try { localStorage.setItem('tg-no-flyers', this.noFlyers ? '1' : '0'); } catch (_) {}
+      if (this.noFlyers) {
+        this.clearAllFlyers();
+        if (this.lyrics.butterflies) {
+          this.lyrics.butterflies = false;
+          this.syncLyricsUI();
+          this.renderLyricsCanvas(this.lyrics.curTime);
+        }
+      }
+      this.syncNoFlyersUI();
+      if (announce) {
+        this.announceStatus(this.noFlyers
+          ? 'All birds, butterflies, and flying creatures removed and disabled.'
+          : 'Flying visitors re-enabled.');
+      }
+    }
+
+    toggleNoFlyers() {
+      // If flyers are currently on screen while enabled, clear them AND disable spawning in one click
+      this.setNoFlyers(!this.noFlyers, true);
+    }
+
     drawFlies(B, now, C) {
+      if (this.noFlyers) {
+        if (this.flies.length) this.flies = [];
+        return;
+      }
       const dt = Math.min(48, now - (this._fl || now));
       this._fl = now;
       const byId = {};
@@ -11190,7 +11319,7 @@
         for (let k = 0; k < 20; k++) { const a = k / 20 * Math.PI * 2; pts.push([lx + Math.cos(a) * r, ly + Math.sin(a) * r]); }
         B.fill(pts, this.theme !== 'flora' ? st.C.sunOrb : st.C.line);
       }
-      if (P.preset === 'visit') this.posterFly(B, tt, P, st.C);
+      if (P.preset === 'visit' && !this.noFlyers) this.posterFly(B, tt, P, st.C);
       if (P.preset === 'typed') {
         const born = st.letters, last = born[born.length - 1], S = P.S;
         if (Math.floor(tt / 400) % 2 === 0 || (last && tt - last.birth < 300)) {
@@ -12833,13 +12962,20 @@
         syncVV();
       }
 
-      // Type mode export buttons
+      // Type mode export & flyer toggle buttons
+      document.getElementById('btn-no-flyers').addEventListener('click', e => {
+        e.stopPropagation();
+        this.toggleNoFlyers();
+      });
       document.getElementById('btn-png').addEventListener('click', e => { e.stopPropagation(); this.savePNG(); this.refocus(); });
       document.getElementById('btn-svg').addEventListener('click', e => { e.stopPropagation(); this.saveSVG(); this.refocus(); });
       document.getElementById('btn-live-rec').addEventListener('click', e => { e.stopPropagation(); this.toggleLiveRecording(); });
+      this.syncNoFlyersUI();
     }
 
     initPosterEvents() {
+      const pNoFly = document.getElementById('btn-poster-no-flyers');
+      if (pNoFly) pNoFly.addEventListener('click', () => this.toggleNoFlyers());
       const textInp = document.getElementById('poster-text');
       textInp.addEventListener('input', e => {
         this.poster.text = e.target.value;
@@ -13019,10 +13155,15 @@
 
       // Toggle chips (Caret, Boil, Butterflies)
       document.querySelectorAll('#lyrics-view [data-toggle]').forEach(btn => {
+        btn.setAttribute('aria-pressed', String(!!this.lyrics[btn.dataset.toggle]));
         btn.addEventListener('click', () => {
           const key = btn.dataset.toggle;
           this.lyrics[key] = !this.lyrics[key];
           btn.classList.toggle('active', this.lyrics[key]);
+          btn.setAttribute('aria-pressed', String(this.lyrics[key]));
+          if (key === 'butterflies' && this.lyrics.butterflies && this.noFlyers) {
+            this.setNoFlyers(false, false);
+          }
           this.renderLyricsCanvas(this.lyrics.curTime);
         });
       });
