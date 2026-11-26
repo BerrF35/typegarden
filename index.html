@@ -1508,9 +1508,9 @@
     <div data-tg="ctrls">
       <div id="type-palettes" data-tg="pal" role="group" aria-label="Color palettes"></div>
       <div class="type-actions">
-        <button type="button" id="btn-no-flyers" data-tg="btn" aria-pressed="false" aria-label="Remove all birds, butterflies, and flying creatures" title="Remove & disable all birds, butterflies & flying visitors (Alt+B)">
+        <button type="button" id="btn-no-flyers" data-tg="btn" class="flyers-off" aria-pressed="true" aria-label="Flying creatures are removed and disabled. Activate to allow birds, butterflies, and visitors again" title="Flying visitors disabled — click to re-enable (Alt+B)">
           <svg class="flyer-icon" aria-hidden="true" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M8 8.2C6.4 4.2 2.2 3.8 2.2 6.8c0 1.8 1.9 2.6 3.5 2.1C4.3 9.7 3.8 11.8 5.2 12.6c1.2.7 2.5-.6 2.8-2.4.3 1.8 1.6 3.1 2.8 2.4 1.4-.8.9-2.9-.5-3.7 1.6.5 3.5-.3 3.5-2.1 0-3-4.2-2.6-5.8 1.4Z"/><path class="flyer-slash" d="M2.2 13.8L13.8 2.2"/></svg>
-          <span id="no-flyers-label">Hide flyers</span>
+          <span id="no-flyers-label">Flyers off</span>
         </button>
         <button type="button" id="btn-live-rec" data-tg="btn" title="Record live typing as video">
           <span class="rec-dot" aria-hidden="true"></span><span id="live-rec-label">REC</span>
@@ -1539,8 +1539,8 @@
       <div class="panel-section">
         <div class="section-head">
           <div class="section-label">Motion</div>
-          <button type="button" id="btn-poster-no-flyers" class="chip-btn" aria-pressed="false" aria-label="Remove all birds, butterflies, and flying creatures in Poster mode" title="Remove & disable all flying visitors">
-            <span class="chip-dot" aria-hidden="true"></span><span id="poster-no-flyers-label">Hide flyers</span>
+          <button type="button" id="btn-poster-no-flyers" class="chip-btn active" aria-pressed="true" aria-label="Remove all birds, butterflies, and flying creatures in Poster mode" title="Remove & disable all flying visitors">
+            <span class="chip-dot" aria-hidden="true"></span><span id="poster-no-flyers-label">Flyers off</span>
           </button>
         </div>
         <div id="poster-presets" class="preset-grid"></div>
@@ -2753,8 +2753,12 @@
         }
       } catch (_) {}
       this.paletteIdx = this.themePalettes[this.theme] || 0;
-      this.noFlyers = false;
-      try { this.noFlyers = localStorage.getItem('tg-no-flyers') === '1'; } catch (_) {}
+      this.noFlyers = true;
+      try {
+        const savedNoFly = localStorage.getItem('tg-no-flyers');
+        if (savedNoFly === '0') this.noFlyers = false;
+        else if (savedNoFly === '1') this.noFlyers = true;
+      } catch (_) {}
       this.props = { boil: true, recoil: 20, density: 1, showHint: true };
 
       // Measurement & drawing context
